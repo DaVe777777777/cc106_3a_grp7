@@ -1,0 +1,182 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/white"
+
+    >
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="0dp"
+        android:background="#e5ceb7">
+
+        <TextView
+            android:id="@+id/profileText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=" VACCINE"
+            android:layout_marginTop="20dp"
+            android:textSize="50sp"
+            android:textColor="#774e23"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:id="@+id/logo"
+            android:layout_width="120dp"
+            android:layout_height="110dp"
+            android:layout_alignParentEnd="true"
+            android:src="@drawable/pet2"
+            android:contentDescription="App Logo" />
+    </RelativeLayout>
+
+    <Button
+        android:id="@+id/backButton"
+        android:layout_width="121dp"
+        android:layout_height="50dp"
+        android:layout_gravity="start"
+        android:background="@drawable/rounded_box_background"
+        android:text="&lt; Back"
+        android:textSize="23sp"
+        android:textColor="#774e23"/>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:background="@drawable/new_card_bg"
+        android:padding="16dp">
+
+        <ImageView
+            android:id="@+id/deleteIcon"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:src="@drawable/ic_delete"
+            android:contentDescription="Delete Icon"
+            android:clickable="true"
+            android:focusable="true"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="5dp" />
+
+        <ImageView
+            android:id="@+id/updateIcon"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentTop="true"
+            android:src="@drawable/ic_update"
+            android:contentDescription="Update Icon"
+            android:clickable="true"
+            android:focusable="true"
+            android:layout_marginEnd="8dp"
+            android:layout_marginTop="5dp" />
+
+        <TextView
+            android:id="@+id/vaccine_name_display"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Vaccine Name"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/updateIcon"
+            android:layout_marginTop="16dp"
+            android:textColor="#774e23"/>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_below="@id/vaccine_name_display"
+            android:layout_marginTop="16dp"
+            >
+
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Drug Name:"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#774e23"
+                />
+
+            <TextView
+                android:id="@+id/drug_name_display"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="18sp"
+                android:textColor="#774e23"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Vaccine Date:"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#774e23"
+                />
+
+            <TextView
+                android:id="@+id/vaccine_date_display"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="18sp"
+                android:textColor="#774e23"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Vaccine Time:"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#774e23"
+                />
+
+            <TextView
+                android:id="@+id/vaccine_time_display"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="18sp"
+                android:textColor="#774e23"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Veterinarian:"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#774e23"
+                />
+
+            <TextView
+                android:id="@+id/veterinarian_name_display"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="18sp"
+                android:textColor="#774e23"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Clinic:"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#774e23"
+                />
+
+            <TextView
+                android:id="@+id/clinic_place_display"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="18sp"
+                android:textColor="#774e23"/>
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
+</LinearLayout>

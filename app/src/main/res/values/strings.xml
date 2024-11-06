@@ -1,0 +1,27 @@
+<resources>
+    <string name="app_name">PAWTNER</string> <!-- Changed app name to reflect your project purpose -->
+
+    <string name="pet_image_placeholder">Image of your pet</string>
+
+
+    <string-array name="gender_array">
+
+        <item>Male</item>
+        <item>Female</item>
+    </string-array>
+
+    <!-- New strings for better UX -->
+    <string name="pet_picture_placeholder">Tap to add pet picture</string>
+    <string name="save_button">Save</string>
+    <string name="cancel_button">Cancel</string>
+    <string name="dob_hint">Select Date of Birth</string>
+    <string name="height_hint">Enter Height</string>
+    <string name="weight_hint">Enter Weight</string>
+    <string name="breed_hint">Enter Breed</string>
+    <string name="name_hint">Enter Pet Name</string>
+    <string name="add_pet_success">Pet added successfully</string>
+    <string name="add_pet_failure">Failed to add pet. Try again.</string>
+    <string name="fill_all_fields">Please fill in all fields</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>

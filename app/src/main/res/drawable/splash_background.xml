@@ -1,0 +1,14 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#e5ceb7" />
+        </shape>
+    </item>
+    <item>
+        <bitmap
+            android:src="@drawable/start_pet2"
+            android:gravity="center"
+            />
+    </item>
+</layer-list>
+
