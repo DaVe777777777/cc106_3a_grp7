@@ -5,25 +5,22 @@ import android.app.AlarmManager;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.media.RingtoneManager;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
-import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
@@ -40,6 +37,8 @@ public class NotificationFragment extends Fragment {
     private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 1;
     private static final int ALARM_PERMISSION_REQUEST_CODE = 2;
 
+    private LinearLayout birthdayNotificationBox;
+    private LinearLayout vaccineNotificationBox;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -67,7 +66,10 @@ public class NotificationFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_notification, container, false);
-        TextView notificationTextView = view.findViewById(R.id.notificationTextView);
+
+        // Initialize containers for notifications
+        birthdayNotificationBox = view.findViewById(R.id.birthdayNotificationBox);
+        vaccineNotificationBox = view.findViewById(R.id.vaccineNotificationBox);
 
         dbHelper = new DBHelper(getContext());
         checkPermissions();
@@ -75,68 +77,84 @@ public class NotificationFragment extends Fragment {
         // Fetch the current username from SharedPreferences
         String currentUsername = getCurrentUsername();
         if (currentUsername == null) {
-            notificationTextView.setText("User not logged in.");
+            TextView errorTextView = new TextView(getContext());
+            errorTextView.setText("User not logged in.");
+            birthdayNotificationBox.addView(errorTextView);  // Display error message if not logged in
             return view;
         }
-
 
         NotificationViewModel notificationViewModel = new ViewModelProvider(this,
                 new NotificationViewModelFactory(dbHelper, currentUsername)).get(NotificationViewModel.class);
 
-// Observe changes to pets with birthdays
+        // Observe changes to pets with birthdays
         notificationViewModel.getPetsWithBirthdayLiveData().observe(getViewLifecycleOwner(), petsWithBirthday -> {
-            updateNotifications(notificationTextView, petsWithBirthday, notificationViewModel.getVaccinesDueTodayLiveData().getValue());
+            updateBirthdayNotifications(petsWithBirthday);
         });
 
-// Observe changes to vaccines due today
+        // Observe changes to vaccines due today
         notificationViewModel.getVaccinesDueTodayLiveData().observe(getViewLifecycleOwner(), vaccinesDueToday -> {
-            updateNotifications(notificationTextView, notificationViewModel.getPetsWithBirthdayLiveData().getValue(), vaccinesDueToday);
+            updateVaccineNotifications(vaccinesDueToday);
         });
-
 
         return view;
     }
 
-    private void updateNotifications(TextView notificationTextView, List<Pet> petsWithBirthday, List<Vaccine> vaccinesDueToday) {
-        StringBuilder notifications = new StringBuilder();
+    private void updateBirthdayNotifications(List<Pet> petsWithBirthday) {
+        birthdayNotificationBox.removeAllViews(); // Clear any previous notifications
 
         if (petsWithBirthday != null && !petsWithBirthday.isEmpty()) {
-            notifications.append("Today's Birthdays:\n");
             for (Pet pet : petsWithBirthday) {
-                notifications.append("- ").append(pet.getName()).append("\n");
+                View birthdayCard = LayoutInflater.from(getContext()).inflate(R.layout.pet_birthday_card, birthdayNotificationBox, false);
+
+                TextView petBirthdayText = birthdayCard.findViewById(R.id.petBirthdayText);
+                TextView petBirthdayDate = birthdayCard.findViewById(R.id.petBirthdayDate);
+
+                petBirthdayText.setText(pet.getName() + "'s Birthday!");
+                petBirthdayDate.setText(pet.getDob());
+
+                birthdayNotificationBox.addView(birthdayCard);  // Add the birthday card to the notification box
+
                 scheduleNotification(getContext(), "Birthday Reminder", "Today is " + pet.getName() + "'s birthday!", pet.getDob());
             }
         } else {
-            notifications.append("No pets have birthdays today.\n");
+            TextView noBirthdayText = new TextView(getContext());
+            noBirthdayText.setText("No pets have birthdays today.");
+            birthdayNotificationBox.addView(noBirthdayText);  // Display "no birthdays" message
         }
+    }
+
+    private void updateVaccineNotifications(List<Vaccine> vaccinesDueToday) {
+        vaccineNotificationBox.removeAllViews(); // Clear any previous notifications
 
         if (vaccinesDueToday != null && !vaccinesDueToday.isEmpty()) {
-            notifications.append("Vaccinations Due Today:\n");
             for (Vaccine vaccine : vaccinesDueToday) {
-                notifications.append("- ").append(vaccine.getVaccineName()).append(" for pet ID: ").append(vaccine.getPetId()).append("\n");
-                scheduleNotification(getContext(), "Vaccination Reminder", vaccine.getVaccineName() + " for pet ID: " + vaccine.getPetId(), vaccine.getVaccineDate());
+                View vaccineCard = LayoutInflater.from(getContext()).inflate(R.layout.vaccine_due_card, vaccineNotificationBox, false);
+
+                TextView vaccineDueText = vaccineCard.findViewById(R.id.vaccineDueText);
+                TextView vaccineDueDate = vaccineCard.findViewById(R.id.vaccineDueDate);
+
+                Pet pet = dbHelper.getPetById(vaccine.getPetId());  // Fetch pet details for the vaccine
+                if (pet != null) {
+                    vaccineDueText.setText(vaccine.getVaccineName() + " for " + pet.getName());
+                    vaccineDueDate.setText(vaccine.getVaccineDate());
+
+                    vaccineNotificationBox.addView(vaccineCard);  // Add the vaccine card to the notification box
+
+                    scheduleNotification(getContext(), "Vaccination Reminder", vaccine.getVaccineName() + " for " + pet.getName(), vaccine.getVaccineDate());
+                }
             }
         } else {
-            notifications.append("No vaccinations are due today.\n");
+            TextView noVaccineText = new TextView(getContext());
+            noVaccineText.setText("No vaccinations are due today.");
+            vaccineNotificationBox.addView(noVaccineText);  // Display "no vaccines" message
         }
-
-        notificationTextView.setText(notifications.toString());
     }
 
-    // New method to retrieve the current logged-in username
+    // Method to retrieve the current logged-in username
     private String getCurrentUsername() {
         SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-        String username = sharedPreferences.getString("loggedInUser", null); // Use null to check if user is logged in
-        if (username == null) {
-            Log.d("NotificationFragment", "User not logged in.");
-            return null; // Return null if no user is logged in
-        }
-        return username; // Return the username directly
+        return sharedPreferences.getString("loggedInUser", null);  // Return null if no user is logged in
     }
-
-
-
-
 
     private void checkPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -154,13 +172,12 @@ public class NotificationFragment extends Fragment {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        // Handle permission result logic here if needed
     }
 
     public void scheduleNotification(Context context, String title, String message, String date) {
         String[] dateParts = date.split("-"); // Expecting format "yyyy-MM-dd"
         int year = Integer.parseInt(dateParts[0]);
-        int month = Integer.parseInt(dateParts[1]) - 1; // Month is zero-based in Calendar
+        int month = Integer.parseInt(dateParts[1]) - 1;  // Month is zero-based in Calendar
         int day = Integer.parseInt(dateParts[2]);
 
         Intent intent = new Intent(context, NotificationReceiver.class);
@@ -171,7 +188,7 @@ public class NotificationFragment extends Fragment {
         PendingIntent pendingIntent = PendingIntent.getBroadcast(context, notificationId, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         Calendar calendar = Calendar.getInstance();
-        calendar.set(year, month, day, 8, 0, 0); // Set time for the notification
+        calendar.set(year, month, day, 8, 0, 0);  // Set time for the notification
 
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         if (alarmManager != null) {

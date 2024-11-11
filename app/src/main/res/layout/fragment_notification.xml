@@ -4,9 +4,9 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".NotificationFragment"
-    android:background="@color/white"
-    >
+    android:background="@color/white">
 
+    <!-- Notification Title -->
     <TextView
         android:id="@+id/titleText"
         android:layout_width="match_parent"
@@ -21,14 +21,67 @@
         android:layout_alignParentTop="true" />
 
     <TextView
-        android:id="@+id/notificationTextView"
+        android:id="@+id/birthdayText"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="80dp"
-        android:layout_below="@id/titleText"
-        android:paddingTop="40dp"
+        android:layout_height="wrap_content"
+        android:text="BIRTHDAY LIST"
         android:textColor="#774e23"
-        android:background="#FFFFFF"
-        />
+        android:textSize="30sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:padding="20dp"
+        android:layout_marginTop="60dp"/>
+
+
+    <!-- ScrollView for birthday notifications -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="120dp"
+        android:layout_marginLeft="15dp"
+        android:layout_marginRight="15dp"
+        android:layout_marginBottom="375dp">
+
+        <LinearLayout
+            android:id="@+id/birthdayNotificationBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- This will display birthday cards -->
+        </LinearLayout>
+    </ScrollView>
+
+    <TextView
+        android:id="@+id/vaccineText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="VACCINE DUE LIST"
+        android:textColor="#774e23"
+        android:textSize="30sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:padding="20dp"
+        android:layout_marginTop="390dp"/>
+
+    <!-- ScrollView for vaccine notifications -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="450dp"
+        android:layout_marginLeft="15dp"
+        android:layout_marginRight="15dp">
+
+        <LinearLayout
+            android:id="@+id/vaccineNotificationBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- This will display vaccine due cards -->
+        </LinearLayout>
+    </ScrollView>
 
 </FrameLayout>

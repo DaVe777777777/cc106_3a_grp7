@@ -4,5 +4,7 @@
         <!-- Set the window background to the splash background -->
         <item name="android:windowBackground">@drawable/splash_background</item>
     </style>
+
+
 </resources>
 

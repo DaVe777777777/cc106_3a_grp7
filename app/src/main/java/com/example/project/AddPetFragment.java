@@ -1,12 +1,15 @@
 package com.example.project;
 
+import android.Manifest;
+import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.DatePickerDialog;
 import android.app.PendingIntent;
-import android.app.Activity;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -20,16 +23,26 @@ import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
+
+import com.example.project.DBHelper;
+import com.example.project.NotificationReceiver;
+import com.example.project.Pet;
+import com.example.project.PetFragment;
+import com.example.project.R;
 
 import java.util.Calendar;
+import java.util.Locale;
 
 public class AddPetFragment extends Fragment {
 
-    private static final int SELECT_PICTURE = 1;
+    private static final int REQUEST_STORAGE_PERMISSION = 100;
     private EditText petNameInput;
     private Spinner petGenderInput;
     private EditText petDobInput;
@@ -86,54 +99,64 @@ public class AddPetFragment extends Fragment {
         );
 
         // Set up click listener to select a pet picture
-        petPicture.setOnClickListener(v -> openImageSelector());
+        petPicture.setOnClickListener(v -> checkPermissionAndOpenImageSelector());
 
-        // Set up the save button click listener
         saveButton.setOnClickListener(v -> {
+            // Retrieve and validate the pet name
+            String petName = petNameInput.getText().toString().trim();
+
+            // Retrieve and validate height and weight
+            String heightText = petHeightInput.getText().toString().trim();
+            String weightText = petWeightInput.getText().toString().trim();
+
+            // Retrieve and validate breed and dob
+            String breed = petBreedInput.getText().toString().trim();
+            String dob = petDobInput.getText().toString().trim();
+
+            // Check if any required field is empty
+            if (petName.isEmpty() || heightText.isEmpty() || weightText.isEmpty() || breed.isEmpty() || dob.isEmpty()) {
+                Toast.makeText(getContext(), "Please fill in all fields", Toast.LENGTH_SHORT).show();
+                return; // Exit the method if any field is empty
+            }
+
             // Create a new Pet object
             Pet newPet = new Pet();
 
-            // Set the properties of the Pet object using user input
-            newPet.setName(petNameInput.getText().toString());
+            // Set the properties of the Pet object
+            newPet.setName(petName);
             newPet.setGender(petGenderInput.getSelectedItem().toString());
-            newPet.setDob(petDobInput.getText().toString());
-            newPet.setHeight(Double.parseDouble(petHeightInput.getText().toString()));
-            newPet.setWeight(Double.parseDouble(petWeightInput.getText().toString()));
-            newPet.setBreed(petBreedInput.getText().toString());
-            newPet.setImageUri(selectedImageUri != null ? selectedImageUri.toString() : "");
+            newPet.setDob(dob);
+            newPet.setHeight(Double.parseDouble(heightText)); // Parse after validation
+            newPet.setWeight(Double.parseDouble(weightText)); // Parse after validation
+            newPet.setBreed(breed);
+            newPet.setImageUri(selectedImageUri != null ? selectedImageUri.toString() : ""); // Use fallback image if no image is selected
             newPet.setUser(loggedInUsername); // Set the user from the logged-in username
 
-            // Validate inputs
-            if (!newPet.getName().isEmpty() && !newPet.getDob().isEmpty() && newPet.getHeight() > 0 && newPet.getWeight() > 0 && !newPet.getBreed().isEmpty()) {
-                // Insert the pet into the database
-                boolean isInserted = dbHelper.insertPet(
-                        newPet.getName(),
-                        newPet.getGender(),
-                        newPet.getDob(),
-                        newPet.getHeight(),
-                        newPet.getWeight(),
-                        newPet.getBreed(),
-                        newPet.getImageUri(),
-                        newPet.getUser() // Use getter to get user
-                );
+            // Insert the pet into the database
+            boolean isInserted = dbHelper.insertPet(
+                    newPet.getName(),
+                    newPet.getGender(),
+                    newPet.getDob(),
+                    newPet.getHeight(),
+                    newPet.getWeight(),
+                    newPet.getBreed(),
+                    newPet.getImageUri(),
+                    newPet.getUser() // Use getter to get user
+            );
 
-                if (isInserted) {
-                    Toast.makeText(getContext(), "Pet added successfully", Toast.LENGTH_SHORT).show();
+            if (isInserted) {
+                Toast.makeText(getContext(), "Pet added successfully", Toast.LENGTH_SHORT).show();
 
-                    // Schedule birthday notification
-                    scheduleBirthdayNotification(newPet.getName(), newPet.getDob());
+                // Schedule birthday notification
+                scheduleBirthdayNotification(newPet.getName(), newPet.getDob());
 
-                    // Navigate explicitly to PetFragment
-                    getParentFragmentManager()
-                            .beginTransaction()
-                            .replace(R.id.fragment_container, new PetFragment())  // Replace with PetFragment
-                            .commit();  // Commit the transaction
-
-                } else {
-                    Toast.makeText(getContext(), "Failed to add pet", Toast.LENGTH_SHORT).show();
-                }
+                // Navigate to PetFragment
+                getParentFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragment_container, new PetFragment())  // Replace with PetFragment
+                        .commit();  // Commit the transaction
             } else {
-                Toast.makeText(getContext(), "Please fill in all fields", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "Failed to add pet", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -159,9 +182,10 @@ public class AddPetFragment extends Fragment {
         DatePickerDialog datePickerDialog = new DatePickerDialog(
                 requireContext(),
                 (view, selectedYear, selectedMonth, selectedDay) -> {
-                    // Format the date as YYYY-MM-DD
-                    String date = selectedYear + "-" + (selectedMonth + 1) + "-" + selectedDay; // Month is 0-based
+                    // Format the date as YYYY-MM-DD with zero padding for month and day
+                    String date = String.format(Locale.getDefault(), "%04d-%02d-%02d", selectedYear, selectedMonth + 1, selectedDay);
                     petDobInput.setText(date);
+
                     // Set calendar instance for the selected date
                     calendar.set(Calendar.YEAR, selectedYear);
                     calendar.set(Calendar.MONTH, selectedMonth);
@@ -172,11 +196,41 @@ public class AddPetFragment extends Fragment {
         datePickerDialog.show();
     }
 
+
     // Method to open the image selector
     private void openImageSelector() {
         Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         intent.setType("image/*");
         imagePickerLauncher.launch(intent); // Launch the image picker using ActivityResultLauncher
+    }
+
+    // Method to check permissions before opening image selector
+    private void checkPermissionAndOpenImageSelector() {
+        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            // Request permission
+            ActivityCompat.requestPermissions(getActivity(),
+                    new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                    REQUEST_STORAGE_PERMISSION);
+        } else {
+            // Permission already granted, open image selector
+            openImageSelector();
+        }
+    }
+
+    // Handle permission result
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_STORAGE_PERMISSION) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission granted, open image selector
+                openImageSelector();
+            } else {
+                // Permission denied
+                Toast.makeText(getContext(), "Permission denied to access external storage", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
     // Schedule a notification for the pet's birthday
@@ -212,7 +266,7 @@ public class AddPetFragment extends Fragment {
     }
 
     // Method to schedule the notification
-    // Method to schedule the notification
+// Method to schedule the notification
     private void scheduleNotification(String petName, long birthdayTime) {
         // Create an intent to trigger the NotificationReceiver
         Log.d("AddPetFragment", "Notification set for: " + petName + " at " + birthdayTime);
@@ -234,5 +288,4 @@ public class AddPetFragment extends Fragment {
             alarmManager.setExact(AlarmManager.RTC_WAKEUP, birthdayTime, pendingIntent);
         }
     }
-
 }

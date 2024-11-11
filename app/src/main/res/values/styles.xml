@@ -11,6 +11,12 @@
         <item name="android:windowBackground">@drawable/splash_background</item>
     </style>
 
+    <style name="AppBar" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Customize your theme here -->
+        <item name="android:statusBarColor">@color/brown</item>
+        <!-- Set to true for light icons -->
+    </style>
+
 
 
 </resources>

@@ -224,47 +224,44 @@ public class DBHelper extends SQLiteOpenHelper {
 
 
 
-
-
     public List<Pet> getAllPetsWithBirthdayToday(String username) {
         List<Pet> petsWithBirthdayToday = new ArrayList<>();
-        String today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+
+        // Get today's month and day (MM-dd)
+        String today = new SimpleDateFormat("MM-dd", Locale.getDefault()).format(new Date());
 
         SQLiteDatabase db = this.getReadableDatabase();
 
+        // Use try-with-resources to automatically close the cursor
+        try (Cursor cursor = db.rawQuery(
+                "SELECT * FROM pets p INNER JOIN users u ON p.user = u.username " +
+                        "WHERE strftime('%m-%d', p.pet_dob) = ? AND LOWER(u.username) = LOWER(?)",
+                new String[]{today, username.toLowerCase()} // Ensure case-insensitive matching of the username
+        )) {
+            if (cursor != null && cursor.moveToFirst()) {
+                do {
+                    // Create a new Pet object and set its properties
+                    Pet pet = new Pet();
+                    pet.setId(cursor.getInt(cursor.getColumnIndexOrThrow(COL_PET_ID)));
+                    pet.setName(cursor.getString(cursor.getColumnIndexOrThrow(COL_PET_NAME)));
+                    pet.setGender(cursor.getString(cursor.getColumnIndexOrThrow(COL_PET_GENDER)));
+                    pet.setDob(cursor.getString(cursor.getColumnIndexOrThrow(COL_PET_DOB)));
+                    pet.setHeight(cursor.getDouble(cursor.getColumnIndexOrThrow(COL_PET_HEIGHT)));
+                    pet.setWeight(cursor.getDouble(cursor.getColumnIndexOrThrow(COL_PET_WEIGHT)));
+                    pet.setBreed(cursor.getString(cursor.getColumnIndexOrThrow(COL_PET_BREED)));
+                    pet.setImageUri(cursor.getString(cursor.getColumnIndexOrThrow(COL_PET_IMAGE_URI)));
+                    pet.setUser(cursor.getString(cursor.getColumnIndexOrThrow(COL_PET_USER)));
 
-        Cursor cursor = db.rawQuery(
-                "SELECT * FROM pets p INNER JOIN users u ON p.user = u.user_id WHERE strftime('%Y-%m-%d', p.pet_dob) = ? AND u.username = ?",
-                new String[]{today, username}
-        );
-
-        if (cursor != null && cursor.moveToFirst()) {
-            do {
-                // Add pets to the list
-                Pet pet = new Pet();
-                pet.setId(cursor.getInt(cursor.getColumnIndexOrThrow(COL_PET_ID)));
-                pet.setName(cursor.getString(cursor.getColumnIndexOrThrow(COL_PET_NAME)));
-                pet.setGender(cursor.getString(cursor.getColumnIndexOrThrow(COL_PET_GENDER)));
-                pet.setDob(cursor.getString(cursor.getColumnIndexOrThrow(COL_PET_DOB)));
-                pet.setHeight(cursor.getDouble(cursor.getColumnIndexOrThrow(COL_PET_HEIGHT)));
-                pet.setWeight(cursor.getDouble(cursor.getColumnIndexOrThrow(COL_PET_WEIGHT)));
-                pet.setBreed(cursor.getString(cursor.getColumnIndexOrThrow(COL_PET_BREED)));
-                pet.setImageUri(cursor.getString(cursor.getColumnIndexOrThrow(COL_PET_IMAGE_URI)));
-                pet.setUser(cursor.getString(cursor.getColumnIndexOrThrow(COL_PET_USER)));
-
-                petsWithBirthdayToday.add(pet);
-            } while (cursor.moveToNext());
-        }
-
-        if (cursor != null) {
-            cursor.close();
+                    petsWithBirthdayToday.add(pet);
+                } while (cursor.moveToNext());
+            }
+        } catch (Exception e) {
+            Log.e("DBHelper", "Error retrieving pets with birthday today", e);
         }
 
         Log.d("DBHelper", "Number of pets with birthday today: " + petsWithBirthdayToday.size());
         return petsWithBirthdayToday;
     }
-
-
 
 
 
@@ -297,6 +294,35 @@ public class DBHelper extends SQLiteOpenHelper {
         return vaccinesDueToday;
     }
 
+    // Method to get a pet by its ID
+    public Pet getPetById(int petId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Pet pet = null; // Initialize the Pet object
+
+        // Query to select a pet by its ID
+        String query = "SELECT * FROM " + TABLE_PETS + " WHERE " + COL_PET_ID + " = ?";
+        Cursor cursor = db.rawQuery(query, new String[]{String.valueOf(petId)});
+
+        if (cursor != null && cursor.moveToFirst()) {
+            try {
+                // Create a new Pet object and set its properties
+                pet = new Pet();
+                pet.setId(cursor.getInt(cursor.getColumnIndexOrThrow(COL_PET_ID)));
+                pet.setName(cursor.getString(cursor.getColumnIndexOrThrow(COL_PET_NAME)));
+                pet.setGender(cursor.getString(cursor.getColumnIndexOrThrow(COL_PET_GENDER)));
+                pet.setDob(cursor.getString(cursor.getColumnIndexOrThrow(COL_PET_DOB)));
+                pet.setHeight(cursor.getDouble(cursor.getColumnIndexOrThrow(COL_PET_HEIGHT)));
+                pet.setWeight(cursor.getDouble(cursor.getColumnIndexOrThrow(COL_PET_WEIGHT)));
+                pet.setBreed(cursor.getString(cursor.getColumnIndexOrThrow(COL_PET_BREED)));
+                pet.setImageUri(cursor.getString(cursor.getColumnIndexOrThrow(COL_PET_IMAGE_URI)));
+                pet.setUser(cursor.getString(cursor.getColumnIndexOrThrow(COL_PET_USER)));
+            } finally {
+                cursor.close();
+            }
+        }
+
+        return pet; // Return the Pet object, or null if not found
+    }
 
 
 

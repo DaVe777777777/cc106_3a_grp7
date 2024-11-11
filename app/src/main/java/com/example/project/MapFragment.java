@@ -55,7 +55,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         View view = inflater.inflate(R.layout.fragment_map, container, false);
 
         // Initialize Places API
-        Places.initialize(requireContext(), "AIzaSyDodZhoz8lUZOVqLM5JppR6xjz7G2a21W0"); // Update with your API key
+        Places.initialize(requireContext(), "API_KEY"); // Update with your API key
         placesClient = Places.createClient(requireContext());
 
         // Initialize location services
@@ -154,7 +154,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     private void showNearbyPetClinics() {
         if (userLocation != null) {
             String placeType = "veterinary_care";
-            String apiKey = "AIzaSyDodZhoz8lUZOVqLM5JppR6xjz7G2a21W0"; // Update with your API key
+            String apiKey = "API_KEY"; // Update with your API key
             String location = userLocation.latitude + "," + userLocation.longitude;
             int radius = 5000;
 

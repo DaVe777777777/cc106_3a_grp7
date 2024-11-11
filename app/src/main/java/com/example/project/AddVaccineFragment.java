@@ -155,16 +155,20 @@ public class AddVaccineFragment extends Fragment {
         }
     }
 
-    // Schedule a notification for the vaccine
-    // Schedule a notification for the vaccine
+
     private void scheduleVaccineNotification(String vaccineName, String vaccineDate, String vaccineTime) {
         // Convert the selected date and time into milliseconds
         long notificationTime = calendar.getTimeInMillis(); // Calendar is already set with the selected date and time
 
         // Create an intent to trigger the NotificationReceiver
         Intent intent = new Intent(getActivity(), NotificationReceiver.class);
-        intent.putExtra("vaccineName", vaccineName);
-        intent.putExtra("petName", pet.getName()); // Pass the pet name for notification
+
+        // Correct the keys for notification extras
+        String title = "Vaccine Reminder for " + pet.getName();
+        String message = pet.getName() + " needs the " + vaccineName + " vaccine on " + vaccineDate + " at " + vaccineTime;
+
+        intent.putExtra("notificationTitle", title); // Set the title as the pet name with reminder
+        intent.putExtra("notificationText", message); // Set the message with the vaccine name, date, and time
 
         // Create PendingIntent with FLAG_IMMUTABLE
         PendingIntent pendingIntent = PendingIntent.getBroadcast(getActivity(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
@@ -175,6 +179,7 @@ public class AddVaccineFragment extends Fragment {
             alarmManager.setExact(AlarmManager.RTC_WAKEUP, notificationTime, pendingIntent);
         }
     }
+
 
 
     // Navigate to VaccinationFragment

@@ -33,6 +33,7 @@ public class NotificationViewModel extends ViewModel {
     }
 
     public LiveData<List<Pet>> getPetsWithBirthdayLiveData() {
+
         return petsWithBirthdayLiveData;
     }
 
