@@ -29,7 +29,7 @@ public class AddVaccineFragment extends Fragment {
 
     private static final String ARG_PET = "pet";
     private Pet pet;
-    private EditText vaccineNameInput, drugNameInput, vaccineDateInput, vaccineTimeInput, veterinarianNameInput, clinicPlaceInput;
+    private EditText vaccineNameInput, drugNameInput, vaccineDateInput, vaccineTimeInput, veterinarianNameInput, clinicPlaceInput, vaccineRepeatDaysInput;
     private DBHelper dbHelper;
     private Calendar calendar = Calendar.getInstance();
 
@@ -62,6 +62,7 @@ public class AddVaccineFragment extends Fragment {
         vaccineTimeInput = view.findViewById(R.id.VaccineTimeInput);
         veterinarianNameInput = view.findViewById(R.id.VeterinarianNameInput);
         clinicPlaceInput = view.findViewById(R.id.ClinicPlaceInput);
+        vaccineRepeatDaysInput = view.findViewById(R.id.VaccineRepeatDaysInput);
 
         // Set up date and time pickers
         vaccineDateInput.setOnClickListener(v -> showDatePickerDialog());
@@ -124,6 +125,7 @@ public class AddVaccineFragment extends Fragment {
     }
 
     // Save the vaccine data to the database
+    // Save the vaccine data to the database
     private void saveVaccineData() {
         String vaccineName = vaccineNameInput.getText().toString().trim();
         String drugName = drugNameInput.getText().toString().trim();
@@ -131,6 +133,8 @@ public class AddVaccineFragment extends Fragment {
         String vaccineTime = vaccineTimeInput.getText().toString().trim();
         String veterinarianName = veterinarianNameInput.getText().toString().trim();
         String clinicPlace = clinicPlaceInput.getText().toString().trim();
+        String repeatDaysText = vaccineRepeatDaysInput.getText().toString().trim();
+        int repeatDays = repeatDaysText.isEmpty() ? 0 : Integer.parseInt(repeatDaysText);
 
         if (vaccineName.isEmpty() || drugName.isEmpty() || vaccineDate.isEmpty() || vaccineTime.isEmpty() ||
                 veterinarianName.isEmpty() || clinicPlace.isEmpty()) {
@@ -144,11 +148,11 @@ public class AddVaccineFragment extends Fragment {
         }
 
         // Insert vaccine data into the database
-        boolean success = dbHelper.insertVaccine(vaccineName, drugName, vaccineDate, vaccineTime, pet.getId(), veterinarianName, clinicPlace);
+        boolean success = dbHelper.insertVaccine(vaccineName, drugName, vaccineDate, vaccineTime, pet.getId(), veterinarianName, clinicPlace, repeatDays);
 
         if (success) {
             Snackbar.make(requireView(), "Vaccine added successfully!", Snackbar.LENGTH_SHORT).show();
-            scheduleVaccineNotification(vaccineName, vaccineDate, vaccineTime); // Schedule the notification
+            scheduleVaccineNotification(vaccineName, vaccineDate, vaccineTime, repeatDays); // Pass repeatDays here as well
             goToVaccinationFragment(); // Navigate to VaccinationFragment
         } else {
             Snackbar.make(requireView(), "Failed to add vaccine", Snackbar.LENGTH_SHORT).show();
@@ -156,30 +160,41 @@ public class AddVaccineFragment extends Fragment {
     }
 
 
-    private void scheduleVaccineNotification(String vaccineName, String vaccineDate, String vaccineTime) {
+    // Schedule the notification and handle repeating logic
+    private void scheduleVaccineNotification(String vaccineName, String vaccineDate, String vaccineTime, int repeatDays) {
         // Convert the selected date and time into milliseconds
         long notificationTime = calendar.getTimeInMillis(); // Calendar is already set with the selected date and time
 
-        // Create an intent to trigger the NotificationReceiver
-        Intent intent = new Intent(getActivity(), NotificationReceiver.class);
+        // Use the passed repeatDays argument for notification repetition
+        if (repeatDays < 0) {
+            repeatDays = 0; // Prevent negative repeatDays values
+        }
 
-        // Correct the keys for notification extras
+        Intent intent = new Intent(getActivity(), NotificationReceiver.class);
         String title = "Vaccine Reminder for " + pet.getName();
         String message = pet.getName() + " needs the " + vaccineName + " vaccine on " + vaccineDate + " at " + vaccineTime;
 
-        intent.putExtra("notificationTitle", title); // Set the title as the pet name with reminder
-        intent.putExtra("notificationText", message); // Set the message with the vaccine name, date, and time
+        intent.putExtra("notificationTitle", title);
+        intent.putExtra("notificationText", message);
 
-        // Create PendingIntent with FLAG_IMMUTABLE
         PendingIntent pendingIntent = PendingIntent.getBroadcast(getActivity(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        // Schedule the notification
         AlarmManager alarmManager = (AlarmManager) getActivity().getSystemService(Context.ALARM_SERVICE);
         if (alarmManager != null) {
+            // Schedule the first notification
             alarmManager.setExact(AlarmManager.RTC_WAKEUP, notificationTime, pendingIntent);
+
+            // If a repeat interval is set, schedule repeating notifications
+            if (repeatDays > 0) {
+                long repeatInterval = repeatDays * 24 * 60 * 60 * 1000; // Convert repeat days to milliseconds
+                long nextNotificationTime = notificationTime + repeatInterval;
+
+                // Schedule repeating notifications with setExact for accuracy
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, nextNotificationTime, pendingIntent);
+            }
+
         }
     }
-
 
 
     // Navigate to VaccinationFragment

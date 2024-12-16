@@ -119,6 +119,19 @@
                 android:inputType="none"
                 android:textColor="#774e23" />
         </LinearLayout>
+        <EditText
+            android:id="@+id/VaccineRepeatDaysInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="30dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginRight="30dp"
+            android:layout_marginBottom="5dp"
+            android:background="@drawable/edittext_background"
+            android:hint="Number of days to repeat reminder"
+            android:inputType="number"
+            android:textColor="#774e23" />
+
 
         <EditText
             android:id="@+id/VeterinarianNameInput"

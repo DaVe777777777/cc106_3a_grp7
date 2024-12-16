@@ -41,7 +41,8 @@
         </activity>
 
         <activity android:name=".ActivityRegister"/>
-        <receiver android:name=".NotificationReceiver" />
+        <receiver android:name=".NotificationReceiver" android:enabled="true" android:exported="false" />
+
 
         <activity android:name=".ActivityHome"
             android:windowSoftInputMode="adjustPan"/>

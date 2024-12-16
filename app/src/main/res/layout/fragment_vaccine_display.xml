@@ -2,9 +2,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/white"
-
-    >
+    android:background="@color/white">
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -91,9 +89,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:layout_below="@id/vaccine_name_display"
-            android:layout_marginTop="16dp"
-            >
-
+            android:layout_marginTop="16dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -101,8 +97,7 @@
                 android:text="Drug Name:"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:textColor="#774e23"
-                />
+                android:textColor="#774e23" />
 
             <TextView
                 android:id="@+id/drug_name_display"
@@ -117,8 +112,7 @@
                 android:text="Vaccine Date:"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:textColor="#774e23"
-                />
+                android:textColor="#774e23"/>
 
             <TextView
                 android:id="@+id/vaccine_date_display"
@@ -133,8 +127,7 @@
                 android:text="Vaccine Time:"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:textColor="#774e23"
-                />
+                android:textColor="#774e23"/>
 
             <TextView
                 android:id="@+id/vaccine_time_display"
@@ -146,11 +139,27 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Veterinarian:"
+                android:text="Repetead Days:"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:textColor="#774e23"
                 />
+
+            <TextView
+                android:id="@+id/repeat_days_display"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="18sp"
+                android:textColor="#774e23"
+                />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Veterinarian:"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#774e23"/>
 
             <TextView
                 android:id="@+id/veterinarian_name_display"
@@ -165,8 +174,7 @@
                 android:text="Clinic:"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:textColor="#774e23"
-                />
+                android:textColor="#774e23"/>
 
             <TextView
                 android:id="@+id/clinic_place_display"
@@ -174,6 +182,9 @@
                 android:layout_height="wrap_content"
                 android:textSize="18sp"
                 android:textColor="#774e23"/>
+
+
+
 
         </LinearLayout>
 

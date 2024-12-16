@@ -57,6 +57,7 @@ public class VaccineUpdateFragment extends Fragment {
         EditText drugNameInput = view.findViewById(R.id.drug_name_input);
         EditText vetNameInput = view.findViewById(R.id.vet_name_input);
         EditText clinicPlaceInput = view.findViewById(R.id.clinic_place_input);
+        EditText repeatDaysInput = view.findViewById(R.id.repeat_days_input);  // New input for repeat days
 
         // Set existing vaccine details
         vaccineNameInput.setText(vaccine.getVaccineName());
@@ -65,6 +66,7 @@ public class VaccineUpdateFragment extends Fragment {
         drugNameInput.setText(vaccine.getDrugName());
         vetNameInput.setText(vaccine.getVetName());
         clinicPlaceInput.setText(vaccine.getClinicLocation());
+        repeatDaysInput.setText(String.valueOf(vaccine.getRepeatDays()));  // Set the repeat days input
 
         // Handle save button click
         Button saveButton = view.findViewById(R.id.save_button);
@@ -75,7 +77,8 @@ public class VaccineUpdateFragment extends Fragment {
                     TextUtils.isEmpty(vaccineTimeInput.getText().toString()) ||
                     TextUtils.isEmpty(drugNameInput.getText().toString()) ||
                     TextUtils.isEmpty(vetNameInput.getText().toString()) ||
-                    TextUtils.isEmpty(clinicPlaceInput.getText().toString())) {
+                    TextUtils.isEmpty(clinicPlaceInput.getText().toString()) ||
+                    TextUtils.isEmpty(repeatDaysInput.getText().toString())) {  // Validate repeatDays
                 // Show error message if any field is empty
                 Toast.makeText(getContext(), "All fields must be filled out", Toast.LENGTH_SHORT).show();
             } else {
@@ -87,19 +90,31 @@ public class VaccineUpdateFragment extends Fragment {
                 vaccine.setVetName(vetNameInput.getText().toString());
                 vaccine.setClinicLocation(clinicPlaceInput.getText().toString());
 
+                // Update repeatDays from input
+                try {
+                    int repeatDays = Integer.parseInt(repeatDaysInput.getText().toString());
+                    vaccine.setRepeatDays(repeatDays);
+                } catch (NumberFormatException e) {
+                    Toast.makeText(getContext(), "Invalid repeat days", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
                 // Save to database
                 DBHelper dbHelper = new DBHelper(getContext());
                 boolean isUpdated = dbHelper.updateVaccine(vaccine);
                 if (isUpdated) {
-                    // Schedule the notification
-                    scheduleVaccineNotification(vaccine);
-
-                    // Show a success message
+                    // Notify the parent fragment to refresh UI
+                    if (getParentFragment() instanceof VaccineDisplayFragment) {
+                        VaccineDisplayFragment vaccineDisplayFragment = (VaccineDisplayFragment) getParentFragment();
+                        vaccineDisplayFragment.updateRepeatDaysDisplay(vaccine.getRepeatDays());
+                    }
                     Toast.makeText(getContext(), "Successfully updated", Toast.LENGTH_SHORT).show();
                 } else {
-                    // Show an error message
                     Toast.makeText(getContext(), "Update failed", Toast.LENGTH_SHORT).show();
                 }
+
+                // Schedule notification for vaccine update
+                scheduleVaccineNotification(vaccine);
 
                 // Navigate back to VaccineDisplayFragment
                 navigateBackToDisplayFragment();
@@ -141,7 +156,6 @@ public class VaccineUpdateFragment extends Fragment {
         PendingIntent pendingIntent = PendingIntent.getBroadcast(getContext(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
     }
-
 
     // Navigate back to VaccineDisplayFragment
     private void navigateBackToDisplayFragment() {

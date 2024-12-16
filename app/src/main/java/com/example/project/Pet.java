@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.util.Date;
 
+
 public class Pet implements Serializable {
     private int id;
     private String name;
@@ -42,9 +43,12 @@ public class Pet implements Serializable {
         this.imageUri = imageUri;
     }
 
+    
+
     public Pet() {
 
     }
+
 
 
 

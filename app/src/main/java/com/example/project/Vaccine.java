@@ -3,8 +3,8 @@ package com.example.project;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.util.Date;
+
 
 public class Vaccine implements Serializable {
     private int vaccineId; // Unique identifier for the vaccine
@@ -15,9 +15,10 @@ public class Vaccine implements Serializable {
     private int petId;
     private String veterinarianName; // Field for veterinarian name
     private String clinicPlace; // Field for clinic location
+    private int repeatDays; // Field for repeat days
 
     // Constructor
-    public Vaccine(int vaccineId, String vaccineName, String drugName, String vaccineDate, String vaccineTime, int petId, String veterinarianName, String clinicPlace) {
+    public Vaccine(int vaccineId, String vaccineName, String drugName, String vaccineDate, String vaccineTime, int petId, String veterinarianName, String clinicPlace, int repeatDays) {
         this.vaccineId = vaccineId;
         this.vaccineName = vaccineName;
         this.drugName = drugName;
@@ -26,17 +27,10 @@ public class Vaccine implements Serializable {
         this.petId = petId;
         this.veterinarianName = veterinarianName;
         this.clinicPlace = clinicPlace;
+        this.repeatDays = repeatDays;
     }
 
     public Vaccine() {
-    }
-
-    public void setVaccineId(int vaccineId) {
-        this.vaccineId = vaccineId;
-    }
-
-    public void setPetId(int petId) {
-        this.petId = petId;
     }
 
     // Getters
@@ -72,6 +66,48 @@ public class Vaccine implements Serializable {
         return clinicPlace;
     }
 
+    public int getRepeatDays() {
+        return repeatDays;
+    }
+
+    // Setters
+    public void setVaccineId(int vaccineId) {
+        this.vaccineId = vaccineId;
+    }
+
+    public void setVaccineName(String vaccineName) {
+        this.vaccineName = vaccineName;
+    }
+
+    public void setDrugName(String drugName) {
+        this.drugName = drugName;
+    }
+
+    public void setVaccineDate(String vaccineDate) {
+        this.vaccineDate = vaccineDate;
+    }
+
+    public void setVaccineTime(String vaccineTime) {
+        this.vaccineTime = vaccineTime;
+    }
+
+    public void setPetId(int petId) {
+        this.petId = petId;
+    }
+
+    public void setVetName(String veterinarianName) {
+        this.veterinarianName = veterinarianName;
+    }
+
+    public void setClinicLocation(String clinicPlace) {
+        this.clinicPlace = clinicPlace;
+    }
+
+    public void setRepeatDays(int repeatDays) {
+        this.repeatDays = repeatDays;
+    }
+
+    // Methods for handling dates
     public int getDueYear() {
         return getDateFromString(vaccineDate).getYear() + 1900; // Add 1900
     }
@@ -94,31 +130,6 @@ public class Vaccine implements Serializable {
         }
     }
 
-    // Setters for updating fields
-    public void setVaccineName(String vaccineName) {
-        this.vaccineName = vaccineName;
-    }
-
-    public void setDrugName(String drugName) {
-        this.drugName = drugName;
-    }
-
-    public void setVaccineDate(String vaccineDate) {
-        this.vaccineDate = vaccineDate;
-    }
-
-    public void setVaccineTime(String vaccineTime) {
-        this.vaccineTime = vaccineTime;
-    }
-
-    public void setVetName(String veterinarianName) {
-        this.veterinarianName = veterinarianName;
-    }
-
-    public void setClinicLocation(String clinicPlace) {
-        this.clinicPlace = clinicPlace;
-    }
-
     // Override toString method
     @Override
     public String toString() {
@@ -131,6 +142,7 @@ public class Vaccine implements Serializable {
                 ", petId=" + petId +
                 ", vetName='" + veterinarianName + '\'' +
                 ", clinicLocation='" + clinicPlace + '\'' +
+                ", repeatDays=" + repeatDays +
                 '}';
     }
 }

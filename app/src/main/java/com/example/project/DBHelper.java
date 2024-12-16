@@ -9,6 +9,7 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -17,7 +18,7 @@ import java.util.Locale;
 
 public class DBHelper extends SQLiteOpenHelper {
     public static final String DB_NAME = "register.db";
-    private static final int DB_VERSION = 6; // Updated version number for new fields
+    private static final int DB_VERSION = 7;
 
     // User table columns
     public static final String TABLE_USERS = "users";
@@ -43,10 +44,11 @@ public class DBHelper extends SQLiteOpenHelper {
     public static final String COL_VACCINE_NAME = "vaccine_name";
     public static final String COL_DRUG_NAME = "drug_name";
     public static final String COL_VACCINE_DATE = "vaccine_date";
-    public static final String COL_VACCINE_TIME = "vaccine_time"; // New column for vaccine time
+    public static final String COL_VACCINE_TIME = "vaccine_time";
     public static final String COL_VACCINE_PET_ID = "vaccine_pet_id"; // Foreign key to pet
-    public static final String COL_VETERINARIAN_NAME = "veterinarian_name"; // New column for veterinarian name
-    public static final String COL_CLINIC_PLACE = "clinic_place"; // New column for clinic location
+    public static final String COL_VETERINARIAN_NAME = "veterinarian_name";
+    public static final String COL_CLINIC_PLACE = "clinic_place";
+    public static final String COL_REPEAT_DAYS = "repeat_days"; // New column for clinic location
 
     public DBHelper(@Nullable Context context) {
         super(context, DB_NAME, null, DB_VERSION); // Use the updated version number
@@ -81,24 +83,76 @@ public class DBHelper extends SQLiteOpenHelper {
                 COL_VACCINE_NAME + " TEXT, " +
                 COL_DRUG_NAME + " TEXT, " +
                 COL_VACCINE_DATE + " TEXT, " +
-                COL_VACCINE_TIME + " TEXT, " + // New column for vaccine time
+                COL_VACCINE_TIME + " TEXT, " + // Vaccine time
                 COL_VACCINE_PET_ID + " INTEGER, " +
-                COL_VETERINARIAN_NAME + " TEXT, " + // New column for veterinarian name
-                COL_CLINIC_PLACE + " TEXT, " + // New column for clinic location
+                COL_VETERINARIAN_NAME + " TEXT, " +
+                COL_CLINIC_PLACE + " TEXT, " +
+                COL_REPEAT_DAYS + " INTEGER, " + // New repeatDays column
                 "FOREIGN KEY(" + COL_VACCINE_PET_ID + ") REFERENCES " + TABLE_PETS + "(" + COL_PET_ID + ") ON DELETE CASCADE)";
         sqLiteDatabase.execSQL(createVaccineTable);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        if (oldVersion < 6) {
-            // Upgrade logic for adding new columns and maintaining data integrity
-            db.execSQL("ALTER TABLE " + TABLE_VACCINES + " ADD COLUMN " + COL_VETERINARIAN_NAME + " TEXT");
-            db.execSQL("ALTER TABLE " + TABLE_VACCINES + " ADD COLUMN " + COL_CLINIC_PLACE + " TEXT");
-            db.execSQL("ALTER TABLE " + TABLE_VACCINES + " ADD COLUMN " + COL_VACCINE_TIME + " TEXT");
+        if (oldVersion < 7) {
+            // Upgrade logic for adding the 'repeat_days' column
+            db.execSQL("ALTER TABLE " + TABLE_VACCINES + " ADD COLUMN " + COL_REPEAT_DAYS + " INTEGER DEFAULT 0");
         }
-        // Add more upgrade logic if there are new future updates.
     }
+
+    public int getTotalPetsForUser(String username) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM pets WHERE user = ?", new String[]{username});
+        int totalPets = 0;
+        if (cursor.moveToFirst()) {
+            totalPets = cursor.getInt(0);
+        }
+        cursor.close();
+        return totalPets;
+    }
+
+    public int getTotalVaccinesForUser(String username) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(
+                "SELECT COUNT(*) FROM vaccines v INNER JOIN pets p ON v.vaccine_pet_id = p.pet_id WHERE p.user = ?",
+                new String[]{username});
+        int totalVaccines = 0;
+        if (cursor.moveToFirst()) {
+            totalVaccines = cursor.getInt(0);
+        }
+        cursor.close();
+        return totalVaccines;
+    }
+
+    public List<Pet> getPetsForUser(String username) {
+        List<Pet> petList = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT * FROM pets WHERE user = ?", new String[]{username});
+
+        Log.d("DBHelper", "Number of rows fetched: " + cursor.getCount());
+
+        if (cursor.moveToFirst()) {
+            do {
+                Pet pet = new Pet();
+                pet.setId(cursor.getInt(cursor.getColumnIndexOrThrow(COL_PET_ID)));
+                pet.setName(cursor.getString(cursor.getColumnIndexOrThrow(COL_PET_NAME)));
+                pet.setImageUri(cursor.getString(cursor.getColumnIndexOrThrow(COL_PET_IMAGE_URI)));
+
+                Log.d("DBHelper", "Fetched pet: " + pet.getName() + ", Image URI: " + pet.getImageUri());
+                petList.add(pet);
+            } while (cursor.moveToNext());
+        } else {
+            Log.w("DBHelper", "No pets found for user: " + username);
+        }
+
+        cursor.close();
+        db.close();
+        return petList;
+    }
+
+
+
+
 
 
     // Method to update a pet record
@@ -121,6 +175,8 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
 
+
+
     // Method to update a vaccine record
     public boolean updateVaccine(Vaccine vaccine) {
         SQLiteDatabase db = this.getWritableDatabase();
@@ -131,8 +187,8 @@ public class DBHelper extends SQLiteOpenHelper {
         values.put(COL_DRUG_NAME, vaccine.getDrugName());
         values.put(COL_VETERINARIAN_NAME, vaccine.getVetName());
         values.put(COL_CLINIC_PLACE, vaccine.getClinicLocation());
+        values.put(COL_REPEAT_DAYS, vaccine.getRepeatDays()); // Update repeatDays field
 
-        // Updating row
         return db.update(TABLE_VACCINES, values, COL_VACCINE_ID + " = ?", new String[]{String.valueOf(vaccine.getVaccineId())}) > 0;
     }
 
@@ -183,16 +239,17 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     // Insert vaccine record for a pet
-    public boolean insertVaccine(String vaccineName, String drugName, String vaccineDate, String vaccineTime, int petId, String veterinarianName, String clinicPlace) {
+    public boolean insertVaccine(String vaccineName, String drugName, String vaccineDate, String vaccineTime, int petId, String veterinarianName, String clinicPlace, int repeatDays) {
         SQLiteDatabase myDB = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
         contentValues.put(COL_VACCINE_NAME, vaccineName);
         contentValues.put(COL_DRUG_NAME, drugName);
         contentValues.put(COL_VACCINE_DATE, vaccineDate);
-        contentValues.put(COL_VACCINE_TIME, vaccineTime); // Insert vaccine time
-        contentValues.put(COL_VACCINE_PET_ID, petId); // Link the vaccine to a pet
-        contentValues.put(COL_VETERINARIAN_NAME, veterinarianName); // Insert veterinarian name
-        contentValues.put(COL_CLINIC_PLACE, clinicPlace); // Insert clinic location
+        contentValues.put(COL_VACCINE_TIME, vaccineTime);
+        contentValues.put(COL_VACCINE_PET_ID, petId);
+        contentValues.put(COL_VETERINARIAN_NAME, veterinarianName);
+        contentValues.put(COL_CLINIC_PLACE, clinicPlace);
+        contentValues.put(COL_REPEAT_DAYS, repeatDays); // Insert repeatDays value
         long result = myDB.insert(TABLE_VACCINES, null, contentValues);
         // Log the insertion result
         Log.d("DBHelper", "Inserted vaccine: " + vaccineName + ", Result: " + result);
@@ -271,7 +328,12 @@ public class DBHelper extends SQLiteOpenHelper {
         String today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
 
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT * FROM vaccines v INNER JOIN pets p ON v.vaccine_pet_id = p.pet_id WHERE v.vaccine_date = ? AND p.user = ?", new String[]{today, username});
+        Cursor cursor = db.rawQuery(
+                "SELECT * FROM vaccines v " +
+                        "INNER JOIN pets p ON v.vaccine_pet_id = p.pet_id " +
+                        "WHERE (v.vaccine_date = ? OR (v.repeat_days > 0 AND strftime('%Y-%m-%d', v.vaccine_date) <= ?)) " +
+                        "AND p.user = ?",
+                new String[]{today, today, username});  // Check vaccines with today or within repeat range
 
         if (cursor != null && cursor.moveToFirst()) {
             do {
@@ -285,14 +347,40 @@ public class DBHelper extends SQLiteOpenHelper {
                 vaccine.setVetName(cursor.getString(cursor.getColumnIndexOrThrow(COL_VETERINARIAN_NAME)));
                 vaccine.setClinicLocation(cursor.getString(cursor.getColumnIndexOrThrow(COL_CLINIC_PLACE)));
                 vaccine.setPetId(cursor.getInt(cursor.getColumnIndexOrThrow(COL_VACCINE_PET_ID)));
+                vaccine.setRepeatDays(cursor.getInt(cursor.getColumnIndexOrThrow(COL_REPEAT_DAYS)));  // Add repeatDays from DB
 
-                vaccinesDueToday.add(vaccine);
+                // If repeatDays is greater than 0, check if the vaccine is due based on last date and repeat interval
+                if (vaccine.getRepeatDays() > 0) {
+                    String lastVaccineDate = vaccine.getVaccineDate();
+                    if (shouldVaccineBeDue(lastVaccineDate, vaccine.getRepeatDays())) {
+                        vaccinesDueToday.add(vaccine);  // Add repeat due vaccines
+                    }
+                } else if (vaccine.getVaccineDate().equals(today)) {
+                    // If no repeatDays, just check if the vaccine is due today
+                    vaccinesDueToday.add(vaccine);
+                }
             } while (cursor.moveToNext());
             cursor.close();
         }
+
         Log.d("DBHelper", "Number of vaccines due today: " + vaccinesDueToday.size());
         return vaccinesDueToday;
     }
+
+    // Helper method to determine if the vaccine is due based on the repeat days
+    private boolean shouldVaccineBeDue(String lastVaccineDate, int repeatDays) {
+        try {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            Date lastDate = dateFormat.parse(lastVaccineDate);
+            long diffInMillis = System.currentTimeMillis() - lastDate.getTime();
+            long diffInDays = diffInMillis / (1000 * 60 * 60 * 24); // Convert millis to days
+            return diffInDays >= repeatDays;
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
 
     // Method to get a pet by its ID
     public Pet getPetById(int petId) {
@@ -331,49 +419,50 @@ public class DBHelper extends SQLiteOpenHelper {
     public List<Vaccine> getVaccinesByPetId(int petId) {
         List<Vaccine> vaccineList = new ArrayList<>();
         SQLiteDatabase myDB = null;
-        Cursor cursor = null; // Declare cursor outside of try
+        Cursor cursor = null;
 
         try {
-            myDB = this.getReadableDatabase(); // Open the database
-            // Order by vaccine ID in descending order to get the newest vaccines on top
+            myDB = this.getReadableDatabase();
+            // Query to get vaccines ordered by vaccine ID in descending order
             String query = "SELECT * FROM " + TABLE_VACCINES +
                     " WHERE " + COL_VACCINE_PET_ID + "=? " +
-                    " ORDER BY " + COL_VACCINE_ID + " DESC"; // Order by vaccine ID in descending order
+                    " ORDER BY " + COL_VACCINE_ID + " DESC";
             cursor = myDB.rawQuery(query, new String[]{String.valueOf(petId)});
 
-            // Iterate through the cursor
+            // Iterate through the cursor to extract vaccine data
             while (cursor.moveToNext()) {
                 int vaccineIdIndex = cursor.getColumnIndexOrThrow(COL_VACCINE_ID);
                 int vaccineNameIndex = cursor.getColumnIndexOrThrow(COL_VACCINE_NAME);
                 int drugNameIndex = cursor.getColumnIndexOrThrow(COL_DRUG_NAME);
                 int vaccineDateIndex = cursor.getColumnIndexOrThrow(COL_VACCINE_DATE);
-                int vaccineTimeIndex = cursor.getColumnIndexOrThrow(COL_VACCINE_TIME); // New index for vaccine time
+                int vaccineTimeIndex = cursor.getColumnIndexOrThrow(COL_VACCINE_TIME);
                 int vetNameIndex = cursor.getColumnIndexOrThrow(COL_VETERINARIAN_NAME);
                 int clinicLocationIndex = cursor.getColumnIndexOrThrow(COL_CLINIC_PLACE);
+                int repeatDaysIndex = cursor.getColumnIndexOrThrow(COL_REPEAT_DAYS);
 
                 int vaccineId = cursor.getInt(vaccineIdIndex);
                 String vaccineName = cursor.getString(vaccineNameIndex);
                 String drugName = cursor.getString(drugNameIndex);
                 String vaccineDate = cursor.getString(vaccineDateIndex);
-                String vaccineTime = cursor.getString(vaccineTimeIndex); // Retrieve vaccine time
+                String vaccineTime = cursor.getString(vaccineTimeIndex);
                 String vetName = cursor.getString(vetNameIndex);
                 String clinicLocation = cursor.getString(clinicLocationIndex);
+                int repeatDays = cursor.getInt(repeatDaysIndex); // Convert to int
 
                 // Create a new Vaccine object and add it to the list
-                vaccineList.add(new Vaccine(vaccineId, vaccineName, drugName, vaccineDate, vaccineTime, petId, vetName, clinicLocation)); // Pass vaccine time to the Vaccine constructor
+                vaccineList.add(new Vaccine(vaccineId, vaccineName, drugName, vaccineDate, vaccineTime, petId, vetName, clinicLocation, repeatDays));
             }
 
-            Log.d("DBHelper", "Number of vaccines for pet " + petId + ": " + vaccineList.size()); // Log the size of the list
+            Log.d("DBHelper", "Number of vaccines for pet " + petId + ": " + vaccineList.size());
 
         } catch (Exception e) {
-            // Log the exception for debugging, including stack trace
             Log.e("DBHelper", "Error retrieving vaccines: " + e.getMessage(), e);
         } finally {
             if (cursor != null) {
-                cursor.close(); // Ensure the cursor is closed
+                cursor.close(); // Close the cursor
             }
             if (myDB != null && myDB.isOpen()) {
-                myDB.close(); // Ensure the database is closed
+                myDB.close(); // Close the database
             }
         }
 
@@ -418,6 +507,9 @@ public class DBHelper extends SQLiteOpenHelper {
         cursor.close(); // Close the cursor
         return petList;
     }
+
+
+
 
 
     // Check if a username exists
